@@ -5,11 +5,24 @@ package clients
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"testing"
+	"time"
 
 	"github.com/Kuadrant/mcp-gateway/internal/config"
+	"github.com/Kuadrant/mcp-gateway/internal/tests/server2"
 	"github.com/stretchr/testify/require"
 )
+
+func getFreePort(t *testing.T) int {
+	t.Helper()
+	listener, err := net.Listen("tcp", ":0")
+	require.NoError(t, err)
+	port := listener.Addr().(*net.TCPAddr).Port
+	listener.Close()
+	return port
+}
 
 func TestInitialize(t *testing.T) {
 	testCases := []struct {
@@ -32,7 +45,6 @@ func TestInitialize(t *testing.T) {
 			passThroughHeaders: map[string]string{},
 			expectedError:      true,
 		},
-		// TODO: Register a mock server to test successful initialization
 	}
 
 	for _, tc := range testCases {
@@ -47,4 +59,30 @@ func TestInitialize(t *testing.T) {
 			require.NotNil(t, client)
 		})
 	}
+}
+
+func TestInitialize_WithMockServer(t *testing.T) {
+	port := getFreePort(t)
+	startup, shutdown, err := server2.RunServer("http", fmt.Sprintf("%d", port))
+	require.NoError(t, err)
+
+	go func() {
+		_ = startup()
+	}()
+	t.Cleanup(func() {
+		_ = shutdown()
+	})
+
+	time.Sleep(100 * time.Millisecond)
+
+	conf := &config.MCPServer{
+		Name:       "test-server",
+		ToolPrefix: "test_",
+		Hostname:   "test.mcp.local",
+		URL:        fmt.Sprintf("http://localhost:%d/mcp", port),
+	}
+
+	client, err := Initialize(context.Background(), fmt.Sprintf("localhost:%d", port), "router-key-123", conf, map[string]string{}, false)
+	require.NoError(t, err)
+	require.NotNil(t, client)
 }
