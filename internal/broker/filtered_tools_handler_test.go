@@ -609,7 +609,7 @@ func TestCombinedAuthorizedToolsAndVirtualServer(t *testing.T) {
 	}
 }
 func TestFindServerByName_ConcurrentConfigChange(t *testing.T) {
-	b := NewBroker(logger)
+	b := NewBroker(slog.Default())
 	bImpl, ok := b.(*mcpBrokerImpl)
 	require.True(t, ok)
 
