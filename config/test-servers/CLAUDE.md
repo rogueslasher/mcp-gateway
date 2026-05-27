@@ -2,7 +2,7 @@
 
 Test servers in `config/test-servers/`:
 - **Server1**: Go SDK (tools: greet, time, slow, headers)
-- **Server2**: Go SDK (tools: hello_world, time, headers, auth1234, slow)
+- **Server2**: Go SDK (tools: hello_world, time, headers, auth1234, slow, set_time, pour_chocolate_into_mold)
 - **Server3**: Python FastMCP (tools: time, add, dozen, pi, get_weather, slow)
 - **API Key Server**: Validates Bearer token authentication (tool: hello_world)
 - **Broken Server**: Intentionally broken server for testing error handling

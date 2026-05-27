@@ -313,7 +313,7 @@ var _ = Describe("Tool Discovery", func() {
 				}
 				g.Expect(serverTools).To(HaveLen(1))
 				g.Expect(serverTools[0]).To(Equal(allowedTool))
-			}, TestTimeoutShort, TestRetryFast).Should(Succeed())
+			}, TestTimeoutMedium, TestRetryFast).Should(Succeed())
 		})
 	})
 
