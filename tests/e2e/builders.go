@@ -561,6 +561,7 @@ type MCPGatewayExtensionSetup struct {
 	gatewayNamespace string
 	sectionName      string
 	publicHost       string
+	listenerPort     int32
 	pollInterval     string
 	extension        *mcpv1alpha1.MCPGatewayExtension
 	referenceGrant   *gatewayv1beta1.ReferenceGrant
@@ -579,6 +580,7 @@ func NewMCPGatewayExtensionSetup(k8sClient client.Client) *MCPGatewayExtensionSe
 		k8sClient:        k8sClient,
 		gatewayName:      GatewayName,
 		gatewayNamespace: GatewayNamespace,
+		listenerPort:     8080,
 	}
 }
 
@@ -620,6 +622,12 @@ func (s *MCPGatewayExtensionSetup) WithPollInterval(interval string) *MCPGateway
 	return s
 }
 
+// WithListenerPort sets the listener port used to compute the privateHost
+func (s *MCPGatewayExtensionSetup) WithListenerPort(port int32) *MCPGatewayExtensionSetup {
+	s.listenerPort = port
+	return s
+}
+
 // WithSectionName sets the sectionName (listener name) to target on the Gateway
 func (s *MCPGatewayExtensionSetup) WithSectionName(sectionName string) *MCPGatewayExtensionSetup {
 	s.sectionName = sectionName
@@ -652,6 +660,10 @@ func (s *MCPGatewayExtensionSetup) Build() *MCPGatewayExtensionSetup {
 	}
 	if s.publicHost != "" {
 		spec.PublicHost = s.publicHost
+	}
+	if gatewayClassName != "istio" {
+		spec.PrivateHost = fmt.Sprintf("%s-%s.%s.svc.cluster.local:%d",
+			s.gatewayName, gatewayClassName, s.gatewayNamespace, s.listenerPort)
 	}
 	if s.pollInterval != "" {
 		interval, _ := strconv.Atoi(s.pollInterval)
@@ -903,13 +915,15 @@ type MCPGatewayExtensionBuilder struct {
 	targetGateway   string
 	targetNamespace string
 	sectionName     string
+	listenerPort    int32
 }
 
 // NewMCPGatewayExtensionBuilder creates a new MCPGatewayExtensionBuilder
 func NewMCPGatewayExtensionBuilder(name, namespace string) *MCPGatewayExtensionBuilder {
 	return &MCPGatewayExtensionBuilder{
-		name:      name,
-		namespace: namespace,
+		name:         name,
+		namespace:    namespace,
+		listenerPort: 8080,
 	}
 }
 
@@ -928,6 +942,11 @@ func (b *MCPGatewayExtensionBuilder) WithSectionName(sectionName string) *MCPGat
 
 // Build creates the MCPGatewayExtension resource
 func (b *MCPGatewayExtensionBuilder) Build() *mcpv1alpha1.MCPGatewayExtension {
+	var privateHost string
+	if gatewayClassName != "istio" {
+		privateHost = fmt.Sprintf("%s-%s.%s.svc.cluster.local:%d",
+			b.targetGateway, gatewayClassName, b.targetNamespace, b.listenerPort)
+	}
 	return &mcpv1alpha1.MCPGatewayExtension{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      b.name,
@@ -942,6 +961,7 @@ func (b *MCPGatewayExtensionBuilder) Build() *mcpv1alpha1.MCPGatewayExtension {
 				Namespace:   b.targetNamespace,
 				SectionName: b.sectionName,
 			},
+			PrivateHost: privateHost,
 		},
 	}
 }
