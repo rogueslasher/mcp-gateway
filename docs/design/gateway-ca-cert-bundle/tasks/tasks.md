@@ -70,6 +70,7 @@ Depends on: Task 1.
 - [ ] Secret update triggers re-reconciliation and config update
 - [ ] Config update flows through `mcpConfig.Notify()` for observer synchronization
 - [ ] No `caCertBundleRef` → no `gatewayCACertPEM` in config (backward compatible)
+- [ ] Integration test: `gatewayCACertPEM` present in config secret when bundle is set, absent when not set
 
 **Verification:** `make lint && make test-unit && make test-controller-integration`
 
@@ -102,28 +103,7 @@ Depends on: Task 2.
 
 ---
 
-### Task 4: MCPServerRegistration controller — skip embedding shared CAs in config
-
-Depends on: Task 2.
-
-**Files:**
-- `internal/controller/mcpserverregistration_controller.go` — modify config building:
-  1. If the server's `caCertSecretRef` points to the same Secret as the gateway's `caCertBundleRef`, skip embedding `CACert` in the per-server config (it's already in `gatewayCACertPEM`)
-  2. If different Secret, continue embedding as before
-- `internal/controller/mcpserverregistration_controller_integration_test.go` — integration tests
-
-**Note:** This is an optimization. Without it, the broker receives the CA both via `gatewayCACertPEM` and per-server `CACert` — functionally correct (additive) but wasteful. This task prevents the duplication that motivates the feature.
-
-**Acceptance criteria:**
-- [ ] Server CA that matches gateway bundle → `CACert` omitted from per-server config
-- [ ] Server CA that differs from gateway bundle → `CACert` embedded as before
-- [ ] No gateway bundle configured → all server CAs embedded as before
-
-**Verification:** `make test-unit && make test-controller-integration`
-
----
-
-### Task 5: Documentation and guide updates
+### Task 4: Documentation and guide updates
 
 Depends on: Tasks 1–3.
 
@@ -139,7 +119,7 @@ Depends on: Tasks 1–3.
 
 ---
 
-### Task 6: E2E tests
+### Task 5: E2E tests
 
 Depends on: Tasks 1–3.
 

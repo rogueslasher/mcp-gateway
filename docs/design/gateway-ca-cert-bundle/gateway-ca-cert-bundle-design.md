@@ -219,6 +219,10 @@ The current design uses a Secret for the CA bundle. A future enhancement could s
 
 The broker could parse the CA certificates and emit metrics or log warnings when certificates are near expiry. This would help operators detect upcoming CA rotations before they cause outages.
 
+### Per-Server CA Deduplication
+
+When a server's `caCertSecretRef` references the same CA that is already in the gateway `caCertBundleRef`, the CA PEM is stored twice in the config — once under `gatewayCACertPEM` and once inline in the server's `caCert` field. This is functionally correct (additive trust pools) but wastes space. A future optimization could skip embedding per-server CAs that match the gateway bundle. However, this introduces complexity: Secrets may be in different namespaces, and if one Secret is deleted, the CA disappears from config even though another Secret references the same CA. Given the low likelihood of users having many duplicate CAs without coordinating, this optimization is deferred.
+
 ## Execution
 
 See:

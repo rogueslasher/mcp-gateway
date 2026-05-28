@@ -37,6 +37,6 @@ tags: Happy,CACertBundle
 
 - When the CA bundle Secret is updated with a new CA certificate (e.g. after CA rotation), the controller should detect the change, re-validate the PEM, and write the updated `gatewayCACertPEM` into the config secret. The config change flows through `mcpConfig.Notify()`, triggering the broker to rebuild its trust pool. After the update propagates (~15-30s controller re-reconciliation), servers whose certificates are signed by the new CA should connect successfully.
 
-### [CACertBundle] Gateway CA stored once in config, not per-server
+### [Happy,CACertBundle] Gateway CA bundle with existing per-server CA on same server
 
-- When an MCPGatewayExtension has `caCertBundleRef` set and multiple MCPServerRegistrations exist without `caCertSecretRef`, the config secret (`mcp-gateway-config`) should contain the CA PEM exactly once under the `gatewayCACertPEM` key, and individual server entries should NOT have inline `caCert` values. This verifies that the gateway-level CA bundle eliminates per-server CA duplication in the config.
+- When an MCPGatewayExtension has `caCertBundleRef` set with a CA that covers an upstream TLS server, and the same server's MCPServerRegistration also has `caCertSecretRef` pointing to the same CA, the broker should connect successfully. Both the gateway bundle and per-server CA contribute to the trust pool additively. This verifies no conflict when the same CA appears in both places.
