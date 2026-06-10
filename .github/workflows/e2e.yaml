@@ -50,7 +50,8 @@ jobs:
           source=pull
           case "${{ github.event_name }}" in
             pull_request)
-              if ! files=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" --paginate --jq '.[].filename'); then
+              # previous_filename covers renames out of the watched paths
+              if ! files=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" --paginate --jq '.[] | .filename, (.previous_filename // empty)'); then
                 echo "could not list PR files, building test servers locally"
                 source=build
               elif echo "$files" | grep -qE '^(tests/servers/|internal/tests/)'; then
@@ -66,8 +67,10 @@ jobs:
               fi
               ;;
             *)
-              git fetch --quiet --depth=1 origin main
-              if ! git diff --quiet FETCH_HEAD HEAD -- tests/servers internal/tests; then
+              if ! git fetch --quiet --depth=1 origin main; then
+                echo "could not fetch origin main, building test servers locally"
+                source=build
+              elif ! git diff --quiet FETCH_HEAD HEAD -- tests/servers internal/tests; then
                 source=build
               fi
               ;;

@@ -366,14 +366,18 @@ TEST_SERVER_IMAGES = test-server1 test-server2 test-server3 test-api-key-server 
 	test-everything-server test-custom-response-server test-user-specific-server
 
 # pull pre-built images straight into containerd on the kind node, in parallel,
-# avoiding both the local rebuild and the docker save + kind load tax
+# avoiding both the local rebuild and the docker save + kind load tax.
+# each image gets one retry to ride out transient registry hiccups.
 define pull-images-into-kind
 	@set -e; pids=""; \
 	for img in $(1); do \
 		ref="$(TEST_SERVER_IMAGE_REPO)/$$img:$(TEST_SERVER_IMAGE_TAG)"; \
 		echo "Pulling $$ref into Kind node..."; \
-		$(CONTAINER_ENGINE) exec $(KIND_CLUSTER_NAME)-control-plane \
-			ctr -n k8s.io images pull "$$ref" >/dev/null & \
+		( $(CONTAINER_ENGINE) exec $(KIND_CLUSTER_NAME)-control-plane \
+			ctr -n k8s.io images pull "$$ref" >/dev/null \
+			|| { echo "Retrying pull of $$ref..."; sleep 2; \
+				$(CONTAINER_ENGINE) exec $(KIND_CLUSTER_NAME)-control-plane \
+					ctr -n k8s.io images pull "$$ref" >/dev/null; } ) & \
 		pids="$$pids $$!"; \
 	done; \
 	rc=0; \

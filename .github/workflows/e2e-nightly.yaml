@@ -29,8 +29,10 @@ jobs:
         id: test-server-images
         run: |
           source=pull
-          git fetch --quiet --depth=1 origin main
-          if ! git diff --quiet FETCH_HEAD HEAD -- tests/servers internal/tests; then
+          if ! git fetch --quiet --depth=1 origin main; then
+            echo "could not fetch origin main, building test servers locally"
+            source=build
+          elif ! git diff --quiet FETCH_HEAD HEAD -- tests/servers internal/tests; then
             source=build
           fi
           echo "source=$source" >> "$GITHUB_OUTPUT"
