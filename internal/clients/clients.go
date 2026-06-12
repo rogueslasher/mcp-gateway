@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Kuadrant/mcp-gateway/internal/config"
 	mcprouter "github.com/Kuadrant/mcp-gateway/internal/mcp-router"
@@ -18,6 +19,8 @@ import (
 	"github.com/mark3labs/mcp-go/client/transport"
 	"github.com/mark3labs/mcp-go/mcp"
 )
+
+const hairpinTimeout = 5 * time.Second
 
 // buildHairpinURL composes the hairpin URL the broker uses to send the internal
 // initialize request back through the gateway. gatewayHost may be either a
@@ -49,12 +52,10 @@ func Initialize(ctx context.Context, gatewayHost, initToken string, conf *config
 
 	url := buildHairpinURL(gatewayHost, mcpPath)
 
-	opts := []transport.StreamableHTTPCOption{transport.WithHTTPHeaders(passThroughHeaders)}
-	if hairpinHTTPClient != nil {
-		opts = append(opts, transport.WithHTTPBasicClient(hairpinHTTPClient))
-	}
-
-	httpClient, err := client.NewStreamableHttpClient(url, opts...)
+	httpClient, err := client.NewStreamableHttpClient(url,
+		transport.WithHTTPHeaders(passThroughHeaders),
+		transport.WithHTTPBasicClient(hairpinHTTPClient),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -81,13 +82,13 @@ func Initialize(ctx context.Context, gatewayHost, initToken string, conf *config
 	return httpClient, nil
 }
 
-// BuildHairpinHTTPClient creates an *http.Client with TLS configured for hairpin
-// requests. It sets ServerName to publicHost so the TLS handshake verifies the
-// certificate SANs against the public hostname while the TCP connection goes to
-// the internal address. Returns nil when privateHost is not HTTPS.
+// BuildHairpinHTTPClient returns an *http.Client for hairpin requests. For HTTPS
+// private hosts it configures TLS with ServerName set to publicHost so the
+// handshake verifies the cert SANs against the public hostname while the TCP
+// connection goes to the internal address. For plain HTTP it returns http.DefaultClient.
 func BuildHairpinHTTPClient(privateHost, publicHost, caCertPath string) (*http.Client, error) {
 	if !strings.HasPrefix(strings.ToLower(privateHost), "https://") {
-		return nil, nil //nolint:nilnil // nil signals no custom client needed for plain HTTP
+		return &http.Client{Timeout: hairpinTimeout}, nil
 	}
 
 	pool, err := x509.SystemCertPool()
@@ -111,5 +112,5 @@ func BuildHairpinHTTPClient(privateHost, publicHost, caCertPath string) (*http.C
 		RootCAs:    pool,
 		ServerName: publicHost,
 	}
-	return &http.Client{Transport: t}, nil
+	return &http.Client{Transport: t, Timeout: hairpinTimeout}, nil
 }

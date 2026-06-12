@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/Kuadrant/mcp-gateway/internal/config"
 	"github.com/stretchr/testify/require"
@@ -100,16 +101,18 @@ func TestInitialize(t *testing.T) {
 }
 
 func TestBuildHairpinHTTPClient(t *testing.T) {
-	t.Run("returns nil for plain HTTP private host", func(t *testing.T) {
+	t.Run("returns plain client with timeout for HTTP private host", func(t *testing.T) {
 		c, err := BuildHairpinHTTPClient("http://gw.svc:8080", "mcp.example.com", "")
 		require.NoError(t, err)
-		require.Nil(t, c)
+		require.NotNil(t, c)
+		require.Equal(t, 5*time.Second, c.Timeout)
 	})
 
-	t.Run("returns nil for bare host without scheme", func(t *testing.T) {
+	t.Run("returns plain client with timeout for bare host without scheme", func(t *testing.T) {
 		c, err := BuildHairpinHTTPClient("gw.svc:8080", "mcp.example.com", "")
 		require.NoError(t, err)
-		require.Nil(t, c)
+		require.NotNil(t, c)
+		require.Equal(t, 5*time.Second, c.Timeout)
 	})
 
 	t.Run("HTTPS sets ServerName and TLS minimum version", func(t *testing.T) {
