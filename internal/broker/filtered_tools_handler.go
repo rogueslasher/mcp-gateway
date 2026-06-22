@@ -192,7 +192,7 @@ func (broker *mcpBrokerImpl) filterToolsByServerMap(allowedTools map[string][]st
 		}
 		tools := upstream.GetManagedTools()
 		if tools == nil {
-			broker.logger.Debug("no tools registered for upstream server", "server", upstream.MCPName)
+			broker.logger.Debug("no tools registered for upstream server", "server", upstream.MCPName())
 			continue
 		}
 
