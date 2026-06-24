@@ -45,9 +45,7 @@ type InitForClient func(ctx context.Context, gatewayHost string, conf *config.MC
 
 // ExtProcServer struct boolean for streaming & Store headers for later use in body processing
 type ExtProcServer struct {
-	// RoutingConfig is replaced wholesale by OnConfigChange (which fires from
-	// viper's fsnotify goroutine) while ext_proc handlers read it from the
-	// per-stream Process goroutines. atomic.Pointer keeps the swap race-free.
+	// RoutingConfig is swapped by OnConfigChange and read by ext_proc handlers.
 	RoutingConfig       atomic.Pointer[config.MCPServersConfig]
 	JWTManager          *session.JWTManager
 	Logger              *slog.Logger

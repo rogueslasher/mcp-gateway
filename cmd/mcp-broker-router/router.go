@@ -22,7 +22,7 @@ func (a *app) createRouter() {
 		MaxRequestBodySize:  cfg.maxRequestBodySize,
 		ElicitationEnabled:  cfg.enableURLElicitation,
 	}
-	// seed initial routing config so reader sites never observe a nil pointer before the first OnConfigChange fires.
+	// seed initial routing config so readers never see a nil pointer.
 	if a.mcpConfig == nil {
 		panic("mcpConfig must be non-nil before constructing the ext_proc server")
 	}

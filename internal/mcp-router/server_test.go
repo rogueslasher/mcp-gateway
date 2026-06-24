@@ -785,7 +785,7 @@ func requireMatchingHTTPStatus(t *testing.T, expected, actual *typev3.HttpStatus
 // TestExtProcServer_OnConfigChange_DataRace exercises a config-reload landing
 // concurrently with a request-handler read of RoutingConfig. The race detector
 // is the assertion; run with go test -race ./internal/mcp-router/...
-func TestExtProcServer_OnConfigChange_DataRace(_ *testing.T) {
+func TestExtProcServer_OnConfigChange_DataRace(t *testing.T) {
 	server := &ExtProcServer{
 		Logger: slog.Default(),
 	}
