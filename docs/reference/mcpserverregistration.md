@@ -112,4 +112,3 @@ spec:
 | **Field** | **Type** | **Description** |
 |-----------|----------|-----------------|
 | `conditions` | [][Kubernetes meta/v1.Condition](https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Condition) | List of conditions that define the status of the resource |
-| `discoveredTools` | Integer | Number of tools discovered from this MCPServerRegistration |

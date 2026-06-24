@@ -14,7 +14,6 @@ import (
 	"os"
 	"time"
 
-	mcpv1alpha1 "github.com/Kuadrant/mcp-gateway/api/v1alpha1"
 	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	mcpgo "github.com/mark3labs/mcp-go/mcp"
 	. "github.com/onsi/ginkgo/v2"
@@ -168,23 +167,12 @@ var _ = Describe("Custom TLS Configuration", Ordered, func() {
 		testResources = append(testResources, registration.GetObjects()...)
 		registeredServer := registration.Register(ctx)
 
-		By("Verifying MCPServerRegistration is not ready with certificate error")
+		// tls certificate validation is a runtime concern handled by the broker.
+		// the controller writes config successfully; errors surface via broker /status.
+		By("Verifying MCPServerRegistration becomes Ready (TLS errors are broker-side)")
 		Eventually(func(g Gomega) {
-			mcpsr := &mcpv1alpha1.MCPServerRegistration{}
-			g.Expect(k8sClient.Get(ctx, types.NamespacedName{
-				Name: registeredServer.Name, Namespace: registeredServer.Namespace,
-			}, mcpsr)).To(Succeed())
-			g.Expect(mcpsr.Status.Conditions).NotTo(BeEmpty())
-			for _, cond := range mcpsr.Status.Conditions {
-				if cond.Type == "Ready" {
-					g.Expect(cond.Status).To(Equal(metav1.ConditionFalse),
-						"MCPServerRegistration should not be ready with wrong CA")
-					g.Expect(cond.Message).To(ContainSubstring("x509"),
-						"condition message should indicate a TLS certificate error")
-					return
-				}
-			}
-			g.Expect(false).To(BeTrue(), "no Ready condition found")
+			g.Expect(VerifyMCPServerRegistrationReady(ctx, k8sClient,
+				registeredServer.Name, registeredServer.Namespace)).To(BeNil())
 		}, TestTimeoutConfigSync, TestRetryInterval).Should(Succeed())
 
 		By("Verifying tools with tls_wrong_ prefix are absent")
@@ -364,14 +352,6 @@ var _ = Describe("HTTPS External Backends", func() {
 		By("Waiting for MCPServerRegistration to become Ready")
 		Eventually(func(g Gomega) {
 			g.Expect(VerifyMCPServerRegistrationReady(ctx, k8sClient, mcpServer.Name, TestServerNameSpace)).To(Succeed())
-		}, TestTimeoutLong, TestRetryInterval).Should(Succeed())
-
-		By("Asserting the registered server has discovered at least one tool")
-		Eventually(func(g Gomega) {
-			sr := &mcpv1alpha1.MCPServerRegistration{}
-			g.Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(mcpServer), sr)).To(Succeed())
-			g.Expect(sr.Status.DiscoveredTools).To(BeNumerically(">", 0),
-				"expected at least one tool discovered over HTTPS from GitHub MCP")
 		}, TestTimeoutLong, TestRetryInterval).Should(Succeed())
 
 		By("Asserting the config stored for this server uses an https:// URL")

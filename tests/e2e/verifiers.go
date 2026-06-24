@@ -67,24 +67,6 @@ func (v *Verifier) MCPServerRegistrationReady(name, namespace string) error {
 	return fmt.Errorf("MCPServerRegistration %s/%s not ready", namespace, name)
 }
 
-// MCPServerRegistrationReadyWithToolsCount checks Ready=True and expected tool count
-func (v *Verifier) MCPServerRegistrationReadyWithToolsCount(name, namespace string, expectedCount int32) error {
-	mcpServer, err := v.getMCPServerRegistration(name, namespace)
-	if err != nil {
-		return err
-	}
-
-	for _, condition := range mcpServer.Status.Conditions {
-		if condition.Type == "Ready" && condition.Status == metav1.ConditionTrue {
-			if mcpServer.Status.DiscoveredTools != expectedCount {
-				return fmt.Errorf("expected %d tools, got %d", expectedCount, mcpServer.Status.DiscoveredTools)
-			}
-			return nil
-		}
-	}
-	return fmt.Errorf("MCPServerRegistration %s/%s not ready", namespace, name)
-}
-
 // MCPServerRegistrationNotReadyWithReason checks Ready=False with expected reason in message
 func (v *Verifier) MCPServerRegistrationNotReadyWithReason(name, namespace, expectedReason string) error {
 	mcpServer, err := v.getMCPServerRegistration(name, namespace)
@@ -257,10 +239,6 @@ func (v *Verifier) HTTPRouteNotFound(name, namespace string) error {
 
 func VerifyMCPServerRegistrationReady(ctx context.Context, k8sClient client.Client, name, namespace string) error {
 	return NewVerifier(ctx, k8sClient).MCPServerRegistrationReady(name, namespace)
-}
-
-func VerifyMCPServerRegistrationReadyWithToolsCount(ctx context.Context, k8sClient client.Client, name, namespace string, toolsCount int32) error {
-	return NewVerifier(ctx, k8sClient).MCPServerRegistrationReadyWithToolsCount(name, namespace, toolsCount)
 }
 
 func VerifyMCPServerRegistrationNotReadyWithReason(ctx context.Context, k8sClient client.Client, name, namespace, expectedReason string) error {

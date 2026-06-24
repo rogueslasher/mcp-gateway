@@ -34,7 +34,6 @@ const (
 // +kubebuilder:printcolumn:name="Target",type="string",JSONPath=".spec.targetRef.name",description="Target HTTPRoute.  MCP Gateway only supports routes with a single BackendRef"
 // +kubebuilder:printcolumn:name="Path",type="string",JSONPath=".spec.path",description="MCP endpoint path"
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status",description="Ready status"
-// +kubebuilder:printcolumn:name="Tools",type="integer",JSONPath=".status.discoveredTools",description="Number of discovered tools"
 // +kubebuilder:printcolumn:name="Category",type="string",JSONPath=".spec.category",description="Server categories for discovery"
 // +kubebuilder:printcolumn:name="Credentials",type="string",JSONPath=".spec.credentialRef.name"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
@@ -216,10 +215,6 @@ type MCPServerRegistrationStatus struct {
 	// +patchMergeKey=type
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
-
-	// discoveredTools is the number of tools discovered from this MCPServerRegistration.
-	// +optional
-	DiscoveredTools int32 `json:"discoveredTools,omitempty"`
 }
 
 // +kubebuilder:object:root=true
