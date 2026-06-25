@@ -65,6 +65,16 @@ is centered around milestones:
 
 Participation in the Kuadrant community is governed by the [Kuadrant Community Code of Conduct](https://github.com/Kuadrant/governance/blob/main/CODE_OF_CONDUCT.md).
 
+## Pull Requests
+
+### Linked issue requirement
+
+Every pull request must reference an open issue. PRs opened without a linked issue will be closed. If no issue exists yet, please open one first so the work can be triaged and prioritised before a PR is submitted.
+
+### Inactivity policy
+
+If a maintainer leaves a review comment or requests changes and the author has not responded within **14 days**, the PR will be closed. The clock starts when a team member posts feedback — not when the PR is opened. PRs that have not yet received a review, or where the author has responded and is awaiting re-review, will not be closed for inactivity. Closed PRs can be reopened once the work is ready to continue.
+
 ## Development Environment
 
 The project uses a top-level `Makefile` with additional include files in `build/*.mk`. Run `make help` for a categorised summary of the most common targets.
