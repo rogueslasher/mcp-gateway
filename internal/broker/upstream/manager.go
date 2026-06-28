@@ -570,88 +570,6 @@ func (man *MCPManager) recordBackendError(span trace.Span, err error) {
 	)
 }
 
-<<<<<<< HEAD
-func (man *MCPManager) findToolConflicts(mcpTools []server.ServerTool) error {
-	gatewayServerTools := man.gatewayServer.ListTools()
-	var conflictingToolNames []string
-	for _, tool := range mcpTools {
-		for existingToolName, existingToolInfo := range gatewayServerTools {
-			existingTool := existingToolInfo.Tool
-			if existingTool.Meta == nil || existingTool.Meta.AdditionalFields == nil {
-				man.logger.Debug("skipping conflict check, tool meta is nil", "upstream mcp server", man.mcp.ID(), "tool", existingToolName)
-				continue
-			}
-			existingToolID, ok := existingTool.Meta.AdditionalFields[gatewayServerID]
-			if !ok {
-				man.logger.Debug("skipping conflict check, tool id is missing", "upstream mcp server", man.mcp.ID(), "tool", existingToolName)
-				continue
-			}
-			toolID, is := existingToolID.(string)
-			if !is {
-				man.logger.Debug("skipping conflict check, tool id is not a string", "upstream mcp server", man.mcp.ID(), "type", reflect.TypeOf(existingToolID))
-				continue
-			}
-
-			if existingToolName == tool.Tool.GetName() && toolID != string(man.mcp.ID()) {
-				man.logger.Debug("tool name conflict found", "upstream mcp server", man.mcp.ID(), "existing", existingToolName, "new", tool.Tool.GetName(), "conflicting server", toolID)
-				conflictingToolNames = append(conflictingToolNames, tool.Tool.GetName())
-			}
-
-		}
-	}
-	if len(conflictingToolNames) > 0 {
-		return fmt.Errorf("conflicting tools discovered. conflicting tool names %v", conflictingToolNames)
-	}
-
-	return nil
-}
-
-// getTools return the existing, and new tools. Must only be called from the Start() event loop.
-func (man *MCPManager) getTools(ctx context.Context) ([]mcp.Tool, []mcp.Tool, error) {
-	tools := make([]mcp.Tool, len(man.tools))
-	copy(tools, man.tools)
-	res, err := man.mcp.ListTools(ctx, mcp.ListToolsRequest{})
-	if err != nil {
-		return tools, tools, fmt.Errorf("failed to get tools: %w", err)
-	}
-	return tools, res.Tools, nil
-}
-
-// GetManagedTools returns a copy of all tools discovered from the upstream server.
-// The returned tools have their original names without the gateway prefix.
-func (man *MCPManager) GetManagedTools() []mcp.Tool {
-	man.toolsLock.RLock()
-	result := make([]mcp.Tool, len(man.tools))
-	copy(result, man.tools)
-	man.toolsLock.RUnlock()
-	return result
-}
-
-// GetServedManagedTool will return the tool if present that is actually being served by the gateway.
-// It expects a prefixed tool if a prefix is present.
-// returns the map pointer directly to avoid per-lookup alloc -- callers must not modify.
-func (man *MCPManager) GetServedManagedTool(toolName string) *mcp.Tool {
-	man.toolsLock.RLock()
-	defer man.toolsLock.RUnlock()
-	return man.servedToolsMap[toolName]
-}
-
-// SetToolsForTesting sets the tools directly for testing purposes.
-// This bypasses the normal tool discovery flow and should only be used in tests.
-// TODO look to remove the need for this
-func (man *MCPManager) SetToolsForTesting(tools []mcp.Tool) {
-	man.toolsLock.Lock()
-	defer man.toolsLock.Unlock()
-	man.tools = tools
-	// set a tools map for quick look up by other functions
-	for i := range tools {
-		man.toolsMap[tools[i].Name] = &tools[i]
-		man.servedToolsMap[prefixedName(man.mcp.GetPrefix(), tools[i].Name)] = &tools[i]
-	}
-}
-
-=======
->>>>>>> 57a83d6 (refactor: consolidate duplicated tool/prompt logic into entityRegistry)
 // SetStatusForTesting sets the status directly for testing purposes.
 // This bypasses the normal status update flow and should only be used in tests.
 func (man *MCPManager) SetStatusForTesting(status ServerValidationStatus) {
@@ -689,51 +607,6 @@ func (man *MCPManager) GetServedManagedTool(toolName string) *mcp.Tool {
 	return man.tools.getServed(toolName)
 }
 
-<<<<<<< HEAD
-// getPrompts returns the existing and new prompts. Must only be called from the Start() event loop.
-func (man *MCPManager) getPrompts(ctx context.Context) ([]mcp.Prompt, []mcp.Prompt, error) {
-	prompts := make([]mcp.Prompt, len(man.prompts))
-	copy(prompts, man.prompts)
-	res, err := man.mcp.ListPrompts(ctx, mcp.ListPromptsRequest{})
-	if err != nil {
-		return prompts, prompts, fmt.Errorf("failed to get prompts: %w", err)
-	}
-	return prompts, res.Prompts, nil
-}
-
-func (man *MCPManager) findPromptConflicts(mcpPrompts []server.ServerPrompt) error {
-	if man.promptsServer == nil {
-		return nil
-	}
-	gatewayServerPrompts := man.promptsServer.ListPrompts()
-	var conflictingPromptNames []string
-	for _, prompt := range mcpPrompts {
-		for existingPromptName, existingPromptInfo := range gatewayServerPrompts {
-			existingPrompt := existingPromptInfo.Prompt
-			if existingPrompt.Meta == nil || existingPrompt.Meta.AdditionalFields == nil {
-				man.logger.Debug("skipping conflict check, prompt meta is nil", "upstream mcp server", man.mcp.ID(), "prompt", existingPromptName)
-				continue
-			}
-			existingPromptID, ok := existingPrompt.Meta.AdditionalFields[gatewayServerID]
-			if !ok {
-				man.logger.Debug("skipping conflict check, prompt id is missing", "upstream mcp server", man.mcp.ID(), "prompt", existingPromptName)
-				continue
-			}
-			promptID, is := existingPromptID.(string)
-			if !is {
-				man.logger.Debug("skipping conflict check, prompt id is not a string", "upstream mcp server", man.mcp.ID(), "type", reflect.TypeOf(existingPromptID))
-				continue
-			}
-			if existingPromptName == prompt.Prompt.Name && promptID != string(man.mcp.ID()) {
-				conflictingPromptNames = append(conflictingPromptNames, prompt.Prompt.Name)
-			}
-		}
-	}
-	if len(conflictingPromptNames) > 0 {
-		return fmt.Errorf("conflicting prompts discovered. conflicting prompt names %v", conflictingPromptNames)
-	}
-	return nil
-=======
 // SetToolsForTesting sets the tools directly for testing purposes.
 // This bypasses the normal tool discovery flow and should only be used in tests.
 // TODO look to remove the need for this
@@ -741,7 +614,6 @@ func (man *MCPManager) SetToolsForTesting(tools []mcp.Tool) {
 	man.toolsLock.Lock()
 	defer man.toolsLock.Unlock()
 	man.tools.setForTesting(tools, man.mcp.GetPrefix())
->>>>>>> 57a83d6 (refactor: consolidate duplicated tool/prompt logic into entityRegistry)
 }
 
 // GetManagedPrompts returns a copy of all prompts discovered from the upstream server.
