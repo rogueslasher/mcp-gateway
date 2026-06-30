@@ -276,6 +276,3 @@ type MCPVirtualServerList struct {
 	Items           []MCPVirtualServer `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&MCPServerRegistration{}, &MCPServerRegistrationList{}, &MCPVirtualServer{}, &MCPVirtualServerList{})
-}
