@@ -360,10 +360,8 @@ func (m *mcpBrokerImpl) RegisteredMCPServers() map[config.UpstreamMCPID]upstream
 func (m *mcpBrokerImpl) GetVirtualServerByHeader(namespaceName string) (config.VirtualServer, error) {
 	m.vsLock.RLock()
 	defer m.vsLock.RUnlock()
-	for _, vs := range m.virtualServers {
-		if vs.Name == namespaceName {
-			return *vs, nil
-		}
+	if vs, ok := m.virtualServers[namespaceName]; ok {
+		return *vs, nil
 	}
 	return config.VirtualServer{}, fmt.Errorf("virtual server %s not found", namespaceName)
 }
